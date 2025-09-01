@@ -26,3 +26,15 @@ It is built using **Node.js, Express, and MongoDB (Mongoose)** and provides REST
 - **Nodemon** (for development)
 
 ---
+**##Installation & Setup**
+# Clone repository
+git clone https://github.com/pranavtss/Backend-ExpenseTracker.git
+
+# Move into project folder
+cd ExpenseTracker
+
+# Install dependencies
+npm install
+
+# start server
+npm start
