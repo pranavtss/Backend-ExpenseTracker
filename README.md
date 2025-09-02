@@ -32,7 +32,7 @@ It is built using **Node.js, Express, and MongoDB (Mongoose)** and provides REST
 git clone https://github.com/pranavtss/Backend-ExpenseTracker.git
 
 - **Move into project folder:**
-cd ExpenseTracker
+cd backendExpenseTracker
 
 - **Install dependencies:**
 npm install
