@@ -38,6 +38,11 @@ async function startServer() {
 
 
 const expenseSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   title: {
     type: String,
     required: true,
@@ -45,8 +50,8 @@ const expenseSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true, 
-  }
-});
+  },
+}, { timestamps: true });
 
 const Expense = mongoose.model("Expense", expenseSchema);
 
@@ -122,31 +127,60 @@ app.post("/auth/login", async (req, res) => {
 
 app.post("/add-expense", async (req, res) => {
   try {
-    const { title, amount } = req.body;
-    const newExpense = new Expense({ title, amount });
+    const { username, title, amount } = req.body;
+
+    if (!username || !title || amount === undefined) {
+      return res.status(400).json({ message: "Username, title and amount are required" });
+    }
+
+    const newExpense = new Expense({
+      username: username.trim().toLowerCase(),
+      title,
+      amount,
+    });
+
     await newExpense.save();
     res.json({ message: "Expense added successfully", expense: newExpense });
   } catch (error) {
-    res.send({ message: "Error creating expense", error: error.message });
+    res.status(500).json({ message: "Error creating expense", error: error.message });
   }
 });
 
 app.get("/expenses", async (req, res) => {
   try {
-    const expenses = await Expense.find();
+    const { username } = req.query;
+
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const expenses = await Expense.find({ username: normalizedUsername }).sort({ createdAt: -1 });
     res.json({ message: "Expenses fetched successfully", expenses });
   } catch (error) {
-    res.json({ message: "Error fetching expenses", error: error.message });
+    res.status(500).json({ message: "Error fetching expenses", error: error.message });
   }
 });
 
 app.delete("/delete-expense/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await Expense.findByIdAndDelete(id);
+    const { username } = req.query;
+
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const deletedExpense = await Expense.findOneAndDelete({ _id: id, username: normalizedUsername });
+
+    if (!deletedExpense) {
+      return res.status(404).json({ message: "Expense not found for this user" });
+    }
+
     res.json({ message: "Expense deleted successfully" });
   } catch (error) {
-    res.json({ message: "Error deleting expense", error: error.message });
+    res.status(500).json({ message: "Error deleting expense", error: error.message });
   }
 });
 
