@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = process.env.PORT || 3333;
 const allowedOrigins = (process.env.CORS_ORIGIN || "")
@@ -48,6 +49,76 @@ const expenseSchema = new mongoose.Schema({
 });
 
 const Expense = mongoose.model("Expense", expenseSchema);
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 3,
+  },
+  passwordHash: {
+    type: String,
+    required: true,
+  },
+});
+
+const User = mongoose.model("User", userSchema);
+
+app.post("/auth/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const existingUser = await User.findOne({ username: normalizedUsername });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "Username already exists" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({ username: normalizedUsername, passwordHash });
+
+    return res.status(201).json({ message: "User created", user: { id: user._id, username: user.username } });
+  } catch (error) {
+    return res.status(500).json({ message: "Error creating user", error: error.message });
+  }
+});
+
+app.post("/auth/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const user = await User.findOne({ username: normalizedUsername });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!validPassword) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    return res.status(200).json({ message: "Login successful", user: { id: user._id, username: user.username } });
+  } catch (error) {
+    return res.status(500).json({ message: "Error during login", error: error.message });
+  }
+});
 
 app.post("/add-expense", async (req, res) => {
   try {
