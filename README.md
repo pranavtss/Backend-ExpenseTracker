@@ -39,3 +39,18 @@ npm install
 
 - **start server:**
 npm start
+
+---
+
+## 🚀 Render Deployment
+
+Use these settings for the backend Render service:
+
+- **Build command:** `npm install`
+- **Start command:** `npm start`
+- **Environment variables:**
+	- `MONGODB_URI` for your MongoDB Atlas connection string
+	- `CORS_ORIGIN` for the deployed frontend URL
+	- `PORT` is provided automatically by Render
+
+Copy `.env.example` to `.env` locally if you want to run the API outside Render.

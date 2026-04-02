@@ -2,18 +2,38 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const app = express();
-const PORT = 3333;
-app.use(cors());
+const PORT = process.env.PORT || 3333;
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  })
+);
 
 app.use(express.json());
-mongoose
-  .connect("mongodb+srv://pranavsubburaj_db_user:tsspranav002@cluster0.eykrkom.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-  .then(() => {
+app.get("/", (req, res) => {
+  res.json({ message: "Expense Tracker API is running" });
+});
+
+async function startServer() {
+  const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/expensetracker";
+
+  try {
+    await mongoose.connect(mongoUri);
     console.log("Connected to MongoDB");
-  })
-  .catch((error) => {
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
     console.log(error);
-  });
+    process.exit(1);
+  }
+}
 
 
 const expenseSchema = new mongoose.Schema({
@@ -59,6 +79,4 @@ app.delete("/delete-expense/:id", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+startServer();
